@@ -28,7 +28,7 @@ In this section we'll load education, wage, and housing data. For each load the 
 # load education data
 education <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/Education(Graduation_Rates).csv')
 
-cat('Dimension of raw data', dim(education),"\n")
+cat('Dimension of raw education data', dim(education),"\n")
 
 #identify columns of interest and rename
 education <- clean_names(education)
@@ -44,11 +44,19 @@ education <- select(education,
                     some_college_percent = percent_of_adults_completing_some_college_or_associate_s_degree_2014_18,
                     four_year_degree_percent = percent_of_adults_with_a_bachelor_s_degree_or_higher_2014_18)
 
-cat('Dimension of selected data', dim(education), "\n")
+cat('Dimension of selected education data', dim(education), "\n")
 
 #remove rows that are missing education data
 education <- subset(education, dropout != '')
-cat('Dimension of data after nulls removed', dim(education))
+
+#add the full state name to the education dataframe
+state_mapping <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/state_mapping.csv')
+
+education <- sqldf('SELECT * 
+                    FROM education
+                    JOIN state_mapping ON education.state = state_mapping.state_short')
+
+cat('Dimension of education data after cleaning and filtering', dim(education))
 ```
 ```{r}
 head(education,1)
@@ -112,14 +120,20 @@ write.csv(homes, paste(path_out, 'clean_homes.csv'), row.names = FALSE)
 ```
 
 <I> Join files </I>
-Now we'll join the education, wages, and housing dataframes using county as the key.  This will give us a single data file to complete the project with.
+Now we'll join the education, wages, and housing dataframes using state and county as the keys.  This will give us a single data file to complete the project with.
 ```{r}
-masterdata <- sqldf('select * 
-                    from education
-                    inner join wages on education.county = wages.county')
+#Join education and wages
+masterdata <- sqldf('SELECT * 
+                    FROM education
+                    INNER JOIN wages ON (education.county = wages.county AND education.state_long = wages.state)')
+
+#Join masterdata to homes
+masterdata <- sqldf('SELECT *
+                     FROM masterdata
+                     INNER JOIN homes ON )
 
 dim(masterdata)
-masterdata
+write.csv(masterdata, paste(path_out, 'master.csv'), row.names = FALSE)
 ```
 
 
