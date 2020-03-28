@@ -1,0 +1,62 @@
+---
+title: "DATA 606 Project Proposal (Education, Wages, and Home Values"
+author: "Ken Popkin"
+---
+
+### Data Preparation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+
+```{r setup}
+# load data
+education <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/Education(Graduation_Rates).csv')
+
+education
+```
+
+
+### Research question 
+<I> Can education and wages be used as predictors for home values? </I>
+
+There are many factors theorized to influence a home’s value and for this project we’ll attempt to answer if two popular topics, education and wages, can be used as predictors for a third popular topic, home values.
+
+### Cases 
+
+**What are the cases, and how many are there?**
+
+
+
+### Data source and method of collection:
+Data is collected from several sources listed below:
+
+<B> Wages: </B> [Quarterly Census of Employment and Wages](https://www.bls.gov/cew/downloadable-data-files.htm)  
+The Quarterly Census of Employment and Wages (QCEW) program publishes a quarterly count of employment and wages reported by employers covering more than 95 percent of U.S. jobs, available at the county, MSA, state and national levels by industry.
+
+<B> Education: </B> [Local Education Agency](https://nces.ed.gov/ccd/f33agency.asp)  
+Revenues and expenditures are audited after the close of the fiscal year and are then submitted to NCES by each state education agency.
+
+<B> Home Values: </B> [Zillow](https://www.zillow.com/research/data/)  
+Zillow Home Value Index (ZHVI) is a smoothed, seasonally adjusted measure of the typical home value and market changes across a given region and housing type. Zillow publishes top-tier ZHVI (typical value for homes within the 65th to 95th percentile range for a given region) and bottom-tier ZHVI (typical value for homes that fall within the 5th to 35th percentile range for a given region). 
+
+### Type of study 
+This is an observational study.
+
+### Dependent Variable
+The response variable is home values and is quantitative.
+
+### Independent Variable
+There are two independent variables; wages which is quantitative and education level which is qualitative.
+
+### Relevant summary statistics 
+
+**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
+
+```{r}
+
+```
+

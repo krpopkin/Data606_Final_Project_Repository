@@ -1,12 +1,79 @@
 ---
-title: "DATA 606 Project Proposal (Education, Wages, and Home Values"
+title: "Data 606 Final Project Proposal"
 author: "Ken Popkin"
+date: "3/26/2020"
+output: html_document
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+```{r}
+#libraries
+library(dplyr)
+library(janitor)
+```
 
 ### Data Preparation
 
-```{r setup, echo=TRUE, results='hide', warning=FALSE, message=FALSE}
-# load data
+```{r}
+# load education data
+education <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/Education(Graduation_Rates).csv')
+
+cat('Dimension of raw data', dim(education),"\n")
+
+#identify columns of interest and rename
+education <- clean_names(education)
+education <- select(education, 
+                    state, 
+                    county = area_name,
+                    dropout = less_than_a_high_school_diploma_2014_18,
+                    hs_diploma = high_school_diploma_only_2014_18,
+                    some_college = some_college_or_associate_s_degree_2014_18,
+                    four_year_degree = bachelor_s_degree_or_higher_2014_18,
+                    dropout_percent = percent_of_adults_with_less_than_a_high_school_diploma_2014_18,
+                    hs_diploma_percent = percent_of_adults_with_a_high_school_diploma_only_2014_18,
+                    some_college_percent = percent_of_adults_completing_some_college_or_associate_s_degree_2014_18,
+                    four_year_degree_percent = percent_of_adults_with_a_bachelor_s_degree_or_higher_2014_18)
+
+cat('Dimension of selected data', dim(education), "\n")
+
+#remove rows that are missing education data
+education <- subset(education, dropout != '')
+cat('Dimension of data after nulls removed', dim(education))
+```
+```{r}
+head(education,1)
+
+write.csv(education, 'education_clean.csv', row.names = FALSE)
+```
+
+```{r}
+# load wages data
+wages <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/allhlcn18.csv')
+
+cat('Dimension of raw wage data:', dim(wages), '\n')
+
+#filter to columns and rows of interest
+#wages <- wages %>%
+#  select(Area.Code, )
+head(wages)
+
+#write.csv(wages, 'wages_clean.csv', row.names = FALSE)
+```
+
+```{r}
+#load home values data
+homes <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/County_Zhvi_AllHomes(Home_Values).csv')
+
+cat('Dimension of homes data:', dim(homes), '\n')
+
+homes <- clean_names(homes)
+
+write.csv(homes, 'homes_clean.csv', row.names = FALSE)
 
 ```
 
