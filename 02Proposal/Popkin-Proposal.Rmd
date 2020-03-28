@@ -15,10 +15,15 @@ knitr::opts_chunk$set(warning = FALSE)
 #libraries
 library(dplyr)
 library(janitor)
+library(sqldf)
+library(stringr)
 ```
 
 ### Data Preparation
 
+In this section we'll load education, wage, and housing data. For each load the features of interest will be selected, rows filtered as needed, and the results written to a clean_education, clean_wages, and clean_homes csv files.  There will also be a fourth csv file that merges all three files using "county" as the key field.
+
+<I> Education data </I>
 ```{r}
 # load education data
 education <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/Education(Graduation_Rates).csv')
@@ -48,9 +53,11 @@ cat('Dimension of data after nulls removed', dim(education))
 ```{r}
 head(education,1)
 
-write.csv(education, 'education_clean.csv', row.names = FALSE)
+path_out = 'C:\\Users\\user\\Documents\\00_Applications_DataScience\\CUNY\\DATA606\\Data606_Final_Project_Repository\\01Data\\'
+write.csv(education, paste(path_out, 'clean_education.csv'), row.names = FALSE)
 ```
 
+<I> Wages data </I>
 ```{r}
 # load wages data
 wages <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/allhlcn18.csv')
@@ -58,23 +65,61 @@ wages <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Proj
 cat('Dimension of raw wage data:', dim(wages), '\n')
 
 #filter to columns and rows of interest
-#wages <- wages %>%
-#  select(Area.Code, )
-head(wages)
+wages <- wages %>%
+  select(type = Area.Type,
+         state = St.Name, 
+         county = Area, 
+         ownership = Ownership,
+         resident_count = Annual.Average.Establishment.Count,
+         avg_annual_pay = Annual.Average.Pay) %>%
+  subset(type == 'County' & ownership == 'Total Covered') %>%
+  select(-type)
 
-#write.csv(wages, 'wages_clean.csv', row.names = FALSE)
+#Remove the state name from the data in the county column,ie "Bibb County, Alabama" becomes "Bibb County"
+wages$position <- (regexpr(pattern =',', wages$county)) - 1
+wages$county <- str_sub(wages$county, end = wages$position)
+
+cat('Dimension of data after filtering', dim(wages))
 ```
 
+```{r}
+head(wages,1)
+write.csv(wages, paste(path_out, 'clean_wages.csv'), row.names = FALSE)
+```
+
+<I> Home values data </I>
 ```{r}
 #load home values data
 homes <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/County_Zhvi_AllHomes(Home_Values).csv')
 
-cat('Dimension of homes data:', dim(homes), '\n')
-
 homes <- clean_names(homes)
 
-write.csv(homes, 'homes_clean.csv', row.names = FALSE)
+cat('Dimension of homes data:', dim(homes), '\n')
 
+homes <-  homes %>%
+  select(county = region_name, state = state, metro = metro,
+         jan = x2018_01, feb = x2018_02, mar = x2018_03, apr = x2018_04, may = x2018_05, jun = x2018_06,
+         jul = x2018_07, aug = x2018_08, sep = x2018_09, oct = x2018_10, nov = x2018_11, dec = x2018_12)
+
+homes$avg_home_value = (homes$jan + homes$feb + homes$mar + homes$apr + homes$may + homes$jun + homes$jul + homes$aug + homes$sep + homes$oct + homes$nov + homes$dec)/12
+
+cat('Dimension of selected homes data:', dim(homes))
+```
+
+```{r}
+head(homes,1)
+write.csv(homes, paste(path_out, 'clean_homes.csv'), row.names = FALSE)
+```
+
+<I> Join files </I>
+Now we'll join the education, wages, and housing dataframes using county as the key.  This will give us a single data file to complete the project with.
+```{r}
+masterdata <- sqldf('select * 
+                    from education
+                    inner join wages on education.county = wages.county')
+
+dim(masterdata)
+masterdata
 ```
 
 
