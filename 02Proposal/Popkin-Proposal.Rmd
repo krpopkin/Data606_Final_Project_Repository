@@ -17,11 +17,13 @@ library(dplyr)
 library(janitor)
 library(sqldf)
 library(stringr)
+library(psych)
+library(ggplot2)
 ```
 
 ### Data Preparation
 
-In this section we'll load education, wage, and housing data. For each load the features of interest will be selected, rows filtered as needed, and the results written to a clean_education, clean_wages, and clean_homes csv files.  There will also be a fourth csv file that merges all three files using "county" as the key field.
+In this section we'll load education, wage, and housing data. For each load the features of interest will be selected, rows filtered as needed, and the results written to clean_education, clean_wages, and clean_homes csv files.  A fourth csv called "master" is also created that is a merge of all three files using state and county as the key fields.
 
 <I> Education data </I>
 ```{r}
@@ -87,7 +89,11 @@ wages <- wages %>%
 wages$position <- (regexpr(pattern =',', wages$county)) - 1
 wages$county <- str_sub(wages$county, end = wages$position)
 
-cat('Dimension of data after filtering', dim(wages))
+#Convert from fctr to double
+wages$avg_annual_pay = as.numeric(gsub("\\,", "", wages$avg_annual_pay))
+wages$avg_annual_pay = as.numeric(as.character(wages$avg_annual_pay))
+
+cat('Dimension of wages data after filtering', dim(wages))
 ```
 
 ```{r}
@@ -95,7 +101,7 @@ head(wages,1)
 write.csv(wages, paste(path_out, 'clean_wages.csv'), row.names = FALSE)
 ```
 
-<I> Home values data </I>
+<I> Home Values data </I>
 ```{r}
 #load home values data
 homes <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/County_Zhvi_AllHomes(Home_Values).csv')
@@ -111,31 +117,45 @@ homes <-  homes %>%
 
 homes$avg_home_value = (homes$jan + homes$feb + homes$mar + homes$apr + homes$may + homes$jun + homes$jul + homes$aug + homes$sep + homes$oct + homes$nov + homes$dec)/12
 
+homes <- homes %>%
+  select(-c(jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec))
+
 cat('Dimension of selected homes data:', dim(homes))
 ```
+
+
 
 ```{r}
 head(homes,1)
 write.csv(homes, paste(path_out, 'clean_homes.csv'), row.names = FALSE)
 ```
 
-<I> Join files </I>
-Now we'll join the education, wages, and housing dataframes using state and county as the keys.  This will give us a single data file to complete the project with.
+<I> Join files </I>     
+Now we'll join the education, wages, and home values dataframes using state and county as the keys.  This will give us a master data file to use when we start the project.
 ```{r}
-#Join education and wages
-masterdata <- sqldf('SELECT * 
+#Join education and wages using sql
+master <- sqldf('SELECT * 
                     FROM education
-                    INNER JOIN wages ON (education.county = wages.county AND education.state_long = wages.state)')
+                    INNER JOIN wages ON (education.county = wages.county AND education.state_long =
+                    wages.state)')
 
-#Join masterdata to homes
-masterdata <- sqldf('SELECT *
-                     FROM masterdata
-                     INNER JOIN homes ON )
+master <- clean_names(master)
+cat('Master data size after joining education and wages is', dim(master), '\n')
 
-dim(masterdata)
-write.csv(masterdata, paste(path_out, 'master.csv'), row.names = FALSE)
+#Join master with homes using merge
+master <- merge(master, homes)
+
+#Clean the master by removing unneeded columns
+master <- master %>%
+  select(-c(state_short, state_long, state_2, county_2, ownership, position))
+
+cat('Master data with education, wages, and homes data is', dim(master))
 ```
 
+```{r}
+head(master,1)
+write.csv(master, paste(path_out, 'master.csv'), row.names = FALSE)
+```
 
 ### Research question 
 <I> Can education and wages be used as predictors for home values? </I>
@@ -143,10 +163,7 @@ write.csv(masterdata, paste(path_out, 'master.csv'), row.names = FALSE)
 There are many factors theorized to influence a home’s value and for this project we’ll attempt to answer if two popular topics, education and wages, can be used as predictors for a third popular topic, home values.
 
 ### Cases 
-
-**What are the cases, and how many are there?**
-
-
+Cases are counties in the United States for this project and there are 2,745 that we'll use to answer the research question.
 
 ### Data source and method of collection:
 Data is collected from several sources listed below:
@@ -170,10 +187,32 @@ The response variable is home values and is quantitative.
 There are two independent variables; wages which is quantitative and education level which is qualitative.
 
 ### Relevant summary statistics 
-
-**Provide summary statistics for each the variables. Also include appropriate visualizations related to your research question (e.g. scatter plot, boxplots, etc). This step requires the use of R, hence a code chunk is provided below. Insert more code chunks as needed.**
-
+<I> Description of the master data file <\I>
 ```{r}
-
+describe(master)
 ```
 
+<I> Education <\I>  
+More analysis of education will be done in the project.  Below are histograms of high school graduation rates and four year college graduation rates.
+```{r}
+#Percent with high school diploma
+ggplot(master, aes(x=hs_diploma_percent)) + geom_histogram()
+```
+
+
+```{r}
+#Percent with four year degrees
+ggplot(master, aes(x=four_year_degree_percent)) + geom_histogram()
+```
+
+<I> Avg annual pay <\I>  
+Average annual pay is skewed right. This makes sense as all US states are in this dataset.
+```{r}
+ggplot(master, aes(x=avg_annual_pay)) + geom_histogram()
+```
+
+<I> Home values plot <\I>  
+Similar to wages, home values in some areas are very high, giving the distribution a right skew
+```{r}
+ggplot(master, aes(x=avg_home_value)) + geom_histogram()
+```
