@@ -51,7 +51,7 @@ cat('Dimension of selected education data', dim(education), "\n")
 #remove rows that are missing education data
 education <- subset(education, dropout != '')
 
-#add the full state name to the education dataframe
+#add the full state name and census region to the education dataframe
 state_mapping <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/state_mapping.csv')
 
 education <- sqldf('SELECT * 

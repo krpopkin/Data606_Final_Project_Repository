@@ -1,0 +1,90 @@
+---
+title: "DATA 606 Data Project Proposal"
+author: "Ken Popkin"
+---
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(message = FALSE)
+knitr::opts_chunk$set(warning = FALSE)
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(reshape2)
+```
+
+
+```{r echo=FALSE}
+# load data
+data <- read.csv('https://raw.githubusercontent.com/krpopkin/Data606_Final_Project_Repository/master/01Data/%20master.csv')
+
+cases = dim(data)[1]
+features = dim(data)[2]
+cat('Data for this project is', cases, 'cases and', features, 'features')
+```
+
+```{r data}
+head(data,1)
+```
+
+### Part 1 - Introduction
+<I> Can education and wages be used as predictors for home values? </I>    
+There are many factors theorized to influence a home’s value and for this project we’ll attempt to answer if two popular topics, education and wages, can be used as predictors for a third popular topic, home values.
+
+Knowing key factors to monitor regarding your home’s value can prove beneficial in multiple areas of modern life.  Areas such as, assessing your long term financial outlook, deciding whether to move or not; and perhaps most important, enabling these and similar decisions to not be based solely on emotion.  
+
+### Part 2 - Data
+The master data file loaded above is a combination of three files ([education](https://nces.ed.gov/ccd/f33agency.asp), [wages](https://www.bls.gov/cew/downloadable-data-files.htm), and [home values](https://www.zillow.com/research/data/)) that were merged using state/county as the key.  For details about the cleaning, filtering, and merging of this data to create the master file refer to the [project proposal](https://www.rpubs.com/krpopkin/591317).
+
+### Part 3 - Exploratory data analysis
+<I> Correlation Heat Map </I>  
+We'll start off with a heat map to highlight the correlations between Education, Wages, and Home Values.  For education we'll include high school diploma and four year college degree.  [This article](http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization) was a huge help in generating the map.
+
+```{r heatmap}
+#Select the data for the heat map
+chm <- data %>%
+  select(HS_dropout = dropout_percent, college_degree = four_year_degree_percent, avg_annual_pay, avg_home_value)
+
+#Calculate the correlation values
+cormat <- round(cor(chm),2)
+
+melted_cormat <- melt(cormat)
+
+#Create the Heatmap
+library(ggplot2)
+ggheatmap <- ggplot(data = melted_cormat, aes(Var2, Var1, fill = value))+
+ geom_tile(color = "white")+
+ scale_fill_gradient2(low = "blue", high = "red", mid = "white", 
+   midpoint = 0, limit = c(-1,1), space = "Lab", 
+   name="Pearson\nCorrelation") +
+  theme_minimal()+ 
+ theme(axis.text.x = element_text(angle = 45, vjust = 1, 
+    size = 12, hjust = 1))+
+ coord_fixed()
+
+reorder_cormat <- function(cormat){
+# Use correlation between variables as distance
+dd <- as.dist((1-cormat)/2)
+hc <- hclust(dd)
+cormat <-cormat[hc$order, hc$order]
+}
+
+ggheatmap + 
+geom_text(aes(Var2, Var1, label = value), color = "black", size = 4)
+````
+
+### Part 4 - Inference
+
+
+### Part 5 - Conclusion
+
+
+### References
+
+
+### Appendix (optional)
+
+Remove this section if you don't have an appendix
