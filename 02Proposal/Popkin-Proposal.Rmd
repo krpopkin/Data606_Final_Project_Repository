@@ -89,9 +89,13 @@ wages <- wages %>%
 wages$position <- (regexpr(pattern =',', wages$county)) - 1
 wages$county <- str_sub(wages$county, end = wages$position)
 
-#Convert from fctr to double
+#Convert wages from fctr to double
 wages$avg_annual_pay = as.numeric(gsub("\\,", "", wages$avg_annual_pay))
 wages$avg_annual_pay = as.numeric(as.character(wages$avg_annual_pay))
+
+#Convert resident_count from fctr to double
+wages$resident_count = as.numeric(gsub("\\,", "", wages$resident_count))
+wages$resident_count = as.numeric(as.character(wages$resident_count))
 
 cat('Dimension of wages data after filtering', dim(wages))
 ```
