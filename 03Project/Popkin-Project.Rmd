@@ -78,13 +78,14 @@ cormat <-cormat[hc$order, hc$order]
 ggheatmap + 
 geom_text(aes(Var2, Var1, label = value), color = "black", size = 4)
 ```
-The education heatmap correlation of 69% correlation with a college degree and home values was somewhat expected.  The -61% corelation for a high school diploma (so no higher education) with home values was initially surprising, but does make sense.
 
-Next we'll generate a heatmap using wages and home values.
+The education heatmap correlation of 69% with a college degree and home values was somewhat expected.  The -61% corelation for a high school diploma (so no higher education) with home values was initially surprising, but does make sense.
+
+Next we'll generate a heatmap using wages, county population, and home values.
 ```{r heatmap}
 #Select the data for the heat map
 chm <- data %>%
-  select(avg_annual_pay, avg_home_value)
+  select(avg_annual_pay, resident_count, avg_home_value)
 
 #Calculate the correlation values
 cormat <- round(cor(chm),2)
@@ -114,90 +115,120 @@ ggheatmap +
 geom_text(aes(Var2, Var1, label = value), color = "black", size = 4)
 ```
 
-The 52% correlation is strong, but not as strong as expected.  What surprising for me is that average pay is showing a lower correlation than education in the previous heatmap.
+The 52% correlation is strong, but not as strong as expected.  What's surprising is that average pay is showing a lower correlation than education in the previous heatmap.
 
-<B> Home Values and Wages Colored by Census Region </B>   
-There are 2,745 counties across 50 states, but only 4 census regions. We'll use regions to create several visual representations of the relationships between education, wages, and home values. 
-```{r home-values-and-wages}
-hvw <- select(data, region, avg_annual_pay, avg_home_value)
+<B> Home Values Compared to Education, Wages, and Resident Count Colored by Census Region </B>   
+There are 2,745 counties across 50 states, but only 4 census regions. We'll use regions to create several scatter charts of the relationship between education, wages, resident count, and home values. 
+```{r scatter-charts}
+scatterdf <- select(data, region, hs_diploma_percent, four_year_degree_percent, avg_annual_pay, resident_count, avg_home_value)
 
-#Scatter chart
-hvw_scatter <- ggplot(hvw, aes(avg_annual_pay, avg_home_value, colour = region)) + 
-  geom_point(alpha=0.5) +
+#Scatter chart of hs diploma percent
+hsd_scatter <- ggplot(scatterdf, aes(avg_home_value, hs_diploma_percent, colour = region)) + 
+  geom_point(alpha=0.5, position = 'jitter') +
   scale_x_continuous(labels = comma) + 
   scale_y_continuous(labels = comma)
 
-#Violin chart
-hvw_violin <- ggplot(hvw, aes(avg_annual_pay, avg_home_value, colour = region)) + 
+#Scatter chart of four year degree percent
+fyd_scatter <- ggplot(scatterdf, aes(avg_home_value, four_year_degree_percent, colour = region)) + 
+  geom_point(alpha=0.5, position = 'jitter') +
   scale_x_continuous(labels = comma) + 
-  scale_y_continuous(labels = comma) +
-  geom_violin()
+  scale_y_continuous(labels = comma)
 
-#Show scatter and violin plots
-ggarrange(hvw_scatter, hvw_violin,
-                    labels = c("Home Values", "Wages"),
-                    ncol = 2, nrow = 1,
+#Scatter chart of average annual pay
+aap_scatter <- ggplot(scatterdf, aes(avg_home_value, avg_annual_pay, colour = region)) + 
+  geom_point(alpha=0.5, position = 'jitter') +
+  scale_x_continuous(labels = comma) + 
+  scale_y_continuous(labels = comma)
+
+#Scatter chart of resident count
+rc_scatter <- ggplot(scatterdf, aes(avg_home_value, resident_count, colour = region)) + 
+  geom_point(alpha=0.5, position = 'jitter') +
+  scale_x_continuous(labels = comma) + 
+  scale_y_continuous(labels = comma)
+
+#Show scatter charts
+ggarrange(hsd_scatter, fyd_scatter, aap_scatter, rc_scatter, 
+                    labels = c("hsd", "fyd", "aap", "rc"),
+                    ncol = 2, nrow = 2,
                     common.legend = TRUE, legend = "bottom")
 ```
 
-<B> Home Values and Four Year College Degrees Colored by Census Region </B>  
-```{r}
-hvc <- select(data, region, four_year_degree_percent, avg_home_value)
+We'll conclude this visuals section with comparisons of the violin plots   
+<I> Home Values </I>
+```{r violin-plots}
+violindf = scatterdf
 
-#Scatter plot
-hvc_scatter <- ggplot(hvc, aes(four_year_degree_percent, avg_home_value, colour = region)) + 
-  geom_point(alpha=0.5) +
-  scale_x_continuous(labels = comma) + 
-  scale_y_continuous(labels = comma)
+violindf$region_num = as.factor(ifelse(violindf$region == 'Northeast',1,ifelse(violindf$region == 'South',2,ifelse(violindf$region == 'Midwest',3,ifelse(violindf$region == 'West',4,5)))))
 
-#Violin plot
-hvc_violin <- ggplot(hvc, aes(four_year_degree_percent, avg_home_value, colour = region)) + 
-  geom_violin() +
-  scale_x_continuous(labels = comma) + 
-  scale_y_continuous(labels = comma)
+#Violin of home values
+hv_violin <- ggplot(violindf, aes(region_num, avg_home_value, colour = region)) + 
+  geom_violin(trim = FALSE) 
 
-#Show scatter and violin plots
-ggarrange(hvc_scatter, hvc_violin,
-                    labels = c("Home Values", "Degree"),
-                    ncol = 2, nrow = 1,
-                    common.legend = TRUE, legend = "bottom")
+#Display the violin plots
+ggarrange(hv_violin,
+          labels = c("hv"),
+          ncol = 1, nrow = 1,
+          common.legend = TRUE, legend = "top")
 ```
 
-<B> Side by Side Comparison by Region of Education, Wages, and Home Values </B>  
-We'll conclude the visuals with this side by side comparison...
+<I> Education </I>
 ```{r}
-dfviolin <- select(data, region, four_year_degree_percent, avg_annual_pay, avg_home_value)
-
-dfviolin$region_num = as.factor(ifelse(dfviolin$region == 'Northeast',1,ifelse(dfviolin$region == 'South',2,ifelse(dfviolin$region == 'Midwest',3,ifelse(dfviolin$region == 'West',4,5)))))
-
-#Violin of education
-violin_education <- ggplot(dfviolin, aes(region_num, four_year_degree_percent, colour = region)) + 
+#Violin of high school diploma
+hsd_violin <- ggplot(violindf, aes(region_num, hs_diploma_percent, colour = region)) + 
   geom_violin(trim = FALSE)
 
+#Violin of four year degree
+fyd_violin <- ggplot(violindf, aes(region_num, four_year_degree_percent, colour = region)) +
+  geom_violin(trim = FALSE)
+
+#Display the violin plots
+ggarrange(hsd_violin, fyd_violin,
+          labels = c("hsd", "fyd"),
+          ncol = 2, nrow = 1,
+          common.legend = TRUE, legend = "bottom")
+```
+
+<I> Wages and Resident Count </I>
+```{r}
 #Violin of wages
-violin_wages <- ggplot(dfviolin, aes(region_num, avg_annual_pay, colour = region)) + 
+aap_violin <- ggplot(violindf, aes(region_num, avg_annual_pay, colour = region)) + 
   geom_violin(trim = FALSE) + 
   scale_y_continuous(labels = comma)
 
-#Violin of home values
-violin_home_value <- ggplot(dfviolin, aes(region_num, avg_home_value, colour = region)) + 
-  geom_violin(trim = FALSE)
+#Violin of resident count
+rc_violin <- ggplot(violindf, aes(region_num, resident_count, colour = region)) + 
+  geom_violin(trim = FALSE) + 
+  scale_y_continuous(labels = comma)
+
+#Display the violin plots
+ggarrange(aap_violin, rc_violin,
+          labels = c("aap", "rc"),
+          ncol = 2, nrow = 1,
+          common.legend = TRUE, legend = "bottom")
 ```
 
-```{r}
-figure <- ggarrange(violin_education, violin_wages, violin_home_value,
-                    labels = c("Education", "Wages", "Home Values"),
-                    ncol = 3, nrow = 1,
-                    common.legend = TRUE, legend = "bottom")
-
-figure
-```
+As we move into Inference and apply a regression model to this data, education will probably be the best predictor of home values, and wages is expected to be signifiant enough to retain in the final model. Given resident counts lower correlation, it is likely to not be included in the final regression model.
 
 ### Part 4 - Inference
+We'll start with a full regression model for home values with explanatory variables of...
+region = census region (Northeast, South, Midwest, West)
+hs = high school diploma   
+college = four year degree  
+wages = average annual pay  
+rc = resident count  
+hv = home values  
+
+```{r}
+rmdata <- data %>%
+  select(region_num, hs = hs_diploma_percent, college = four_year_degree_percent, wages = avg_annual_pay, rc = resident_count, hv = avg_home_value)
+
+rmall <- lm(hv ~ region_num + hs + college + wages + rc, data = rmdata)
+summary(rmall)
+```
 
 
 ### Part 5 - Conclusion
 
 
 ### References
-[This article](http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization) was a huge help in generating the map.
+[This article from STHDA](http://www.sthda.com/english/wiki/ggplot2-quick-correlation-matrix-heatmap-r-software-and-data-visualization) was a huge help in generating the heatmaps.

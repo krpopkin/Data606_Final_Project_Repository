@@ -58,6 +58,9 @@ education <- sqldf('SELECT *
                     FROM education
                     JOIN state_mapping ON education.state = state_mapping.state_short')
 
+#Region is characters, so add a Region number column as a categorical variable
+education$region_num = as.factor(ifelse(education$region == 'Northeast',1,ifelse(education$region == 'South',2,ifelse(education$region == 'Midwest',3,ifelse(education$region == 'West',4,5)))))
+
 cat('Dimension of education data after cleaning and filtering', dim(education))
 ```
 ```{r}
